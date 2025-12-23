@@ -1,0 +1,291 @@
+// Juniper SRX Default Applications
+// Extracted from junos-defaults configuration
+// Format: protocol -> port/port-range -> application name
+
+module com.juniper.srx.services
+
+// TCP Services
+tcp: Mapping<String, String> = new {
+  ["20"] = "junos-ftp-data"
+  ["21"] = "junos-ftp"
+  ["22"] = "junos-ssh"
+  ["23"] = "junos-telnet"
+  ["25"] = "junos-smtp"
+  ["43"] = "junos-whois"
+  ["49"] = "junos-tacacs"
+  ["53"] = "junos-dns-tcp"
+  ["65"] = "junos-tacacs-ds"
+  ["70"] = "junos-gopher"
+  ["79"] = "junos-finger"
+  ["80"] = "junos-http"
+  ["111"] = "junos-sun-rpc-tcp"
+  ["113"] = "junos-ident"
+  ["119"] = "junos-nntp"
+  ["135"] = "junos-ms-rpc-tcp"
+  ["139"] = "junos-smb"
+  ["143"] = "junos-imap"
+  ["179"] = "junos-bgp"
+  ["210"] = "junos-wais"
+  ["389"] = "junos-internet-locator-service"
+  ["443"] = "junos-https"
+  ["444"] = "junos-snpp"
+  ["445"] = "junos-smb-session"
+  ["465"] = "junos-smtps"
+  ["514"] = "junos-rsh"
+  ["515"] = "junos-lpr"
+  ["554"] = "junos-realaudio"
+  ["587"] = "junos-smtps"
+  ["646"] = "junos-ldp-tcp"
+  ["705"] = "junos-snmp-agentx"
+  ["862"] = "junos-twamp"
+  ["1433"] = "junos-ms-sql"
+  ["1494"] = "junos-winframe"
+  ["1521"] = "junos-sqlnet-v2"
+  ["1525"] = "junos-sqlnet-v1"
+  ["1720"] = "junos-h323"
+  ["1723"] = "junos-pptp"
+  ["1863"] = "junos-msn"
+  ["2000"] = "junos-sccp"
+  ["2049"] = "junos-nfsd-tcp"
+  ["2401"] = "junos-cvspserver"
+  ["3220"] = "junos-xnm-ssl"
+  ["3221"] = "junos-xnm-clear-text"
+  ["3389"] = "junos-rdp"
+  ["3578"] = "junos-wxcontrol"
+  ["5000-5010"] = "junos-ymsg"
+  ["5050"] = "junos-ymsg"
+  ["5060"] = "junos-sip"
+  ["5800"] = "junos-vnc"
+  ["5900"] = "junos-vnc"
+  ["6000-6063"] = "junos-x-windows"
+  ["6660-6669"] = "junos-irc"
+  ["7001"] = "junos-http-ext"
+  ["15397"] = "junos-ns-global-pro"
+}
+
+// UDP Services
+udp: Mapping<String, String> = new {
+  ["7"] = "junos-echo"
+  ["9"] = "junos-discard"
+  ["19"] = "junos-chargen"
+  ["53"] = "junos-dns-udp"
+  ["67"] = "junos-dhcp-relay"
+  ["68"] = "junos-bootpc"
+  ["69"] = "junos-nsm"
+  ["111"] = "junos-sun-rpc-udp"
+  ["123"] = "junos-ntp"
+  ["135"] = "junos-ms-rpc-udp"
+  ["137"] = "junos-nbname"
+  ["138"] = "junos-nbds"
+  ["500"] = "junos-ike"
+  ["512"] = "junos-biff"
+  ["513"] = "junos-who"
+  ["514"] = "junos-syslog"
+  ["517"] = "junos-talk"
+  ["518"] = "junos-ntalk"
+  ["520"] = "junos-rip"
+  ["540"] = "junos-uucp"
+  ["646"] = "junos-ldp-udp"
+  ["1434"] = "junos-sql-monitor"
+  ["1701"] = "junos-l2tp"
+  ["1812"] = "junos-radius"
+  ["1813"] = "junos-radacct"
+  ["2049"] = "junos-nfsd-udp"
+  ["2123"] = "junos-gtp"
+  ["2427"] = "junos-mgcp-ua"
+  ["2727"] = "junos-mgcp-ca"
+  ["3478-3479"] = "junos-stun"
+  ["4500"] = "junos-ike-nat"
+  ["4789"] = "junos-vxlan"
+  ["5060"] = "junos-sip"
+  ["5632"] = "junos-pc-anywhere"
+  ["6081"] = "junos-geneve"
+  ["6346-6347"] = "junos-gnutella"
+  ["7000-7010"] = "junos-vdo-live"
+  ["28672"] = "junos-r2cp"
+}
+
+// TCP with application-protocol field (like AOL using protocol 6 with port range)
+tcpApplicationProtocol: Mapping<String, String> = new {
+  ["5190-5193"] = "junos-aol"
+}
+
+// Protocol Numbers (for non-port protocols)
+protocols: Mapping<String, String> = new {
+  ["0"] = "junos-any"
+  ["6"] = "tcp"
+  ["17"] = "udp"
+  ["47"] = "junos-gre"
+  ["50"] = "esp"
+  ["51"] = "ah"
+  ["132"] = "junos-sctp-any"
+  ["255"] = "junos-persistent-nat"
+}
+
+// ICMP Services
+icmp: Mapping<String, String> = new {
+  ["all"] = "junos-icmp-all"
+  ["echo-request"] = "junos-icmp-ping"
+}
+
+// Application Sets (groupings of applications)
+applicationSets: Mapping<String, List<String>> = new {
+  ["junos-routing-inbound"] = List(
+    "junos-bgp",
+    "junos-rip",
+    "junos-ldp-tcp",
+    "junos-ldp-udp"
+  )
+  ["junos-cifs"] = List(
+    "junos-netbios-session",
+    "junos-smb-session"
+  )
+  ["junos-mgcp"] = List(
+    "junos-mgcp-ua",
+    "junos-mgcp-ca"
+  )
+  ["junos-ms-rpc"] = List(
+    "junos-ms-rpc-tcp",
+    "junos-ms-rpc-udp"
+  )
+  ["junos-ms-rpc-msexchange"] = List(
+    "junos-ms-rpc-tcp",
+    "junos-ms-rpc-udp",
+    "junos-ms-rpc-epm",
+    "junos-ms-rpc-msexchange-directory-rfr",
+    "junos-ms-rpc-msexchange-info-store",
+    "junos-ms-rpc-msexchange-directory-nsp"
+  )
+  ["junos-ms-rpc-wmic"] = List(
+    "junos-ms-rpc-tcp",
+    "junos-ms-rpc-wmic-admin",
+    "junos-ms-rpc-wmic-admin2",
+    "junos-ms-rpc-wmic-webm-level1login",
+    "junos-ms-rpc-wmic-mgmt"
+  )
+  ["junos-ms-rpc-iis-com"] = List(
+    "junos-ms-rpc-tcp",
+    "junos-ms-rpc-iis-com-1",
+    "junos-ms-rpc-iis-com-adminbase"
+  )
+  ["junos-ms-rpc-any"] = List(
+    "junos-ms-rpc-tcp",
+    "junos-ms-rpc-udp",
+    "junos-ms-rpc-uuid-any-tcp",
+    "junos-ms-rpc-uuid-any-udp"
+  )
+  ["junos-sun-rpc"] = List(
+    "junos-sun-rpc-tcp",
+    "junos-sun-rpc-udp"
+  )
+  ["junos-sun-rpc-portmap"] = List(
+    "junos-sun-rpc-tcp",
+    "junos-sun-rpc-udp",
+    "junos-sun-rpc-portmap-tcp",
+    "junos-sun-rpc-portmap-udp"
+  )
+  ["junos-sun-rpc-nfs"] = List(
+    "junos-sun-rpc-tcp",
+    "junos-sun-rpc-udp",
+    "junos-sun-rpc-portmap-tcp",
+    "junos-sun-rpc-portmap-udp",
+    "junos-sun-rpc-nfs-tcp",
+    "junos-sun-rpc-nfs-udp"
+  )
+  ["junos-sun-rpc-mountd"] = List(
+    "junos-sun-rpc-tcp",
+    "junos-sun-rpc-udp",
+    "junos-sun-rpc-portmap-tcp",
+    "junos-sun-rpc-portmap-udp",
+    "junos-sun-rpc-mountd-tcp",
+    "junos-sun-rpc-mountd-udp"
+  )
+  ["junos-sun-rpc-ypbind"] = List(
+    "junos-sun-rpc-tcp",
+    "junos-sun-rpc-udp",
+    "junos-sun-rpc-portmap-tcp",
+    "junos-sun-rpc-portmap-udp",
+    "junos-sun-rpc-ypbind-tcp",
+    "junos-sun-rpc-ypbind-udp"
+  )
+  ["junos-sun-rpc-status"] = List(
+    "junos-sun-rpc-tcp",
+    "junos-sun-rpc-udp",
+    "junos-sun-rpc-portmap-tcp",
+    "junos-sun-rpc-portmap-udp",
+    "junos-sun-rpc-status-tcp",
+    "junos-sun-rpc-status-udp"
+  )
+  ["junos-sun-rpc-ypserv"] = List(
+    "junos-sun-rpc-tcp",
+    "junos-sun-rpc-udp",
+    "junos-sun-rpc-portmap-tcp",
+    "junos-sun-rpc-portmap-udp",
+    "junos-sun-rpc-ypserv-tcp",
+    "junos-sun-rpc-ypserv-udp"
+  )
+  ["junos-sun-rpc-rquotad"] = List(
+    "junos-sun-rpc-tcp",
+    "junos-sun-rpc-udp",
+    "junos-sun-rpc-portmap-tcp",
+    "junos-sun-rpc-portmap-udp",
+    "junos-sun-rpc-rquotad-tcp",
+    "junos-sun-rpc-rquotad-udp"
+  )
+  ["junos-sun-rpc-nlockmgr"] = List(
+    "junos-sun-rpc-tcp",
+    "junos-sun-rpc-udp",
+    "junos-sun-rpc-portmap-tcp",
+    "junos-sun-rpc-portmap-udp",
+    "junos-sun-rpc-nlockmgr-tcp",
+    "junos-sun-rpc-nlockmgr-udp"
+  )
+  ["junos-sun-rpc-ruserd"] = List(
+    "junos-sun-rpc-tcp",
+    "junos-sun-rpc-udp",
+    "junos-sun-rpc-portmap-tcp",
+    "junos-sun-rpc-portmap-udp",
+    "junos-sun-rpc-ruserd-tcp",
+    "junos-sun-rpc-ruserd-udp"
+  )
+  ["junos-sun-rpc-sadmind"] = List(
+    "junos-sun-rpc-tcp",
+    "junos-sun-rpc-udp",
+    "junos-sun-rpc-portmap-tcp",
+    "junos-sun-rpc-portmap-udp",
+    "junos-sun-rpc-sadmind-tcp",
+    "junos-sun-rpc-sadmind-udp"
+  )
+  ["junos-sun-rpc-sprayd"] = List(
+    "junos-sun-rpc-tcp",
+    "junos-sun-rpc-udp",
+    "junos-sun-rpc-portmap-tcp",
+    "junos-sun-rpc-portmap-udp",
+    "junos-sun-rpc-sprayd-tcp",
+    "junos-sun-rpc-sprayd-udp"
+  )
+  ["junos-sun-rpc-walld"] = List(
+    "junos-sun-rpc-tcp",
+    "junos-sun-rpc-udp",
+    "junos-sun-rpc-portmap-tcp",
+    "junos-sun-rpc-portmap-udp",
+    "junos-sun-rpc-walld-tcp",
+    "junos-sun-rpc-walld-udp"
+  )
+  ["junos-sun-rpc-any"] = List(
+    "junos-sun-rpc-tcp",
+    "junos-sun-rpc-udp",
+    "junos-sun-rpc-any-tcp",
+    "junos-sun-rpc-any-udp"
+  )
+  ["junos-sun-rpc-nfs-access"] = List(
+    "junos-sun-rpc-tcp",
+    "junos-sun-rpc-udp",
+    "junos-sun-rpc-portmap-tcp",
+    "junos-sun-rpc-portmap-udp",
+    "junos-sun-rpc-nfs-tcp",
+    "junos-sun-rpc-nfs-udp",
+    "junos-sun-rpc-mountd-tcp",
+    "junos-sun-rpc-mountd-udp"
+  )
+}

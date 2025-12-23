@@ -1,0 +1,57 @@
+// IANA Standard Services
+// Based on IANA Service Name and Transport Protocol Port Number Registry
+// Format: protocol -> port/port-range -> service name
+
+module com.iana.services
+
+// TCP Services
+tcp: Mapping<String, String> = new {
+  ["20"] = "ftp-data"
+  ["21"] = "ftp"
+  ["22"] = "ssh"
+  ["23"] = "telnet"
+  ["25"] = "smtp"
+  ["53"] = "dns"
+  ["80"] = "http"
+  ["110"] = "pop3"
+  ["143"] = "imap"
+  ["389"] = "ldap"
+  ["443"] = "https"
+  ["465"] = "smtps"
+  ["587"] = "submission"
+  ["636"] = "ldaps"
+  ["993"] = "imaps"
+  ["995"] = "pop3s"
+  ["1433"] = "ms-sql-s"
+  ["3306"] = "mysql"
+  ["3389"] = "ms-wbt-server"
+  ["5432"] = "postgresql"
+  ["5900"] = "rfb"
+  ["8080"] = "http-alt"
+  ["8443"] = "https-alt"
+}
+
+// UDP Services
+udp: Mapping<String, String> = new {
+  ["53"] = "dns"
+  ["67"] = "bootps"
+  ["68"] = "bootpc"
+  ["123"] = "ntp"
+  ["161"] = "snmp"
+  ["162"] = "snmptrap"
+  ["389"] = "ldap"
+  ["514"] = "syslog"
+  ["1194"] = "openvpn"
+  ["3478"] = "stun"
+  ["5060"] = "sip"
+  ["5061"] = "sips"
+}
+
+// Protocol Numbers (for non-port protocols)
+protocols: Mapping<String, String> = new {
+  ["1"] = "icmp"
+  ["2"] = "igmp"
+  ["6"] = "tcp"
+  ["17"] = "udp"
+  ["47"] = "gre"
+}
