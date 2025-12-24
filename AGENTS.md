@@ -137,10 +137,10 @@ python srx_session_analyzer.py vpn-sessions.txt -P 10.150.0.0/16 -T -n 10
   - Matches client IP with `-s`, server IP with `-d`, or either by default
 
 - `get_service_name(protocol, dest_port)` - Protocol/port to service name lookup
-  - Maps protocol + destination port to IANA standard service names
-  - Supports TCP, UDP, and protocol-only services (ospf, icmp, etc.)
+  - Checks services in priority order: Juniper → Custom → IANA → protocol name
+  - Supports TCP, UDP, SCTP, DCCP and protocol-only services (ospf, icmp, etc.)
+  - Supports port ranges (e.g., 50000-50150)
   - Falls back to protocol name if no mapping found
-  - Based on IANA Service Name and Transport Protocol Port Number Registry
 
 - `is_valid_ip_address(ip)` - IP address validation
   - Validates both IPv4 and IPv6 address formats

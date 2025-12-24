@@ -10,19 +10,25 @@ from datetime import datetime
 
 # Service mappings loaded from PKL files via pkl eval
 juniper_services = {}
+custom_services = {}
 iana_services = {}
 
 def load_services():
     """
     Load service definitions from PKL files using pkl eval.
     
-    Tries to load Juniper services and IANA services.
+    Loads services in priority order:
+    1. Juniper services (vendor defaults)
+    2. Custom services (site-specific applications)
+    3. IANA services (standard port mappings)
+    
     Falls back to empty dicts if files not found or pkl not available.
     """
-    global juniper_services, iana_services
+    global juniper_services, custom_services, iana_services
     
     script_dir = os.path.dirname(os.path.abspath(__file__))
     juniper_pkl = os.path.join(script_dir, 'services', 'juniper_services.pkl')
+    custom_pkl = os.path.join(script_dir, 'services', 'custom_services.pkl')
     iana_pkl = os.path.join(script_dir, 'services', 'iana_services.pkl')
     
     # Load Juniper services
@@ -32,6 +38,16 @@ def load_services():
                                   capture_output=True, text=True, timeout=5)
             if result.returncode == 0:
                 juniper_services = json.loads(result.stdout)
+        except (FileNotFoundError, subprocess.TimeoutExpired, json.JSONDecodeError):
+            pass
+    
+    # Load custom services
+    if os.path.exists(custom_pkl):
+        try:
+            result = subprocess.run(['pkl', 'eval', '-f', 'json', custom_pkl], 
+                                  capture_output=True, text=True, timeout=5)
+            if result.returncode == 0:
+                custom_services = json.loads(result.stdout)
         except (FileNotFoundError, subprocess.TimeoutExpired, json.JSONDecodeError):
             pass
     
@@ -72,7 +88,11 @@ def get_service_name(protocol, dest_port):
     """
     Determine service name from protocol and destination port.
     
-    Checks Juniper services first (priority), then falls back to IANA services.
+    Checks services in priority order:
+    1. Juniper services (vendor defaults)
+    2. Custom services (site-specific applications)
+    3. IANA services (standard port mappings)
+    4. Protocol name (fallback)
     
     Args:
         protocol: Protocol name (tcp, udp, icmp, etc.)
@@ -91,31 +111,19 @@ def get_service_name(protocol, dest_port):
     
     protocol_lower = protocol.lower()
     
-    # Check Juniper services first (priority)
-    if protocol_lower in juniper_services:
-        protocol_map = juniper_services[protocol_lower]
-        if isinstance(protocol_map, dict):
-            # Check exact port match first
-            if str(dest_port_int) in protocol_map:
-                return protocol_map[str(dest_port_int)]
-            
-            # Check port ranges
-            for port_spec, service_name in protocol_map.items():
-                if port_in_range(dest_port_int, port_spec):
-                    return service_name
-    
-    # Fall back to IANA services
-    if protocol_lower in iana_services:
-        protocol_map = iana_services[protocol_lower]
-        if isinstance(protocol_map, dict):
-            # Check exact port match first
-            if str(dest_port_int) in protocol_map:
-                return protocol_map[str(dest_port_int)]
-            
-            # Check port ranges
-            for port_spec, service_name in protocol_map.items():
-                if port_in_range(dest_port_int, port_spec):
-                    return service_name
+    # Check services in priority order: Juniper -> Custom -> IANA
+    for service_dict in [juniper_services, custom_services, iana_services]:
+        if protocol_lower in service_dict:
+            protocol_map = service_dict[protocol_lower]
+            if isinstance(protocol_map, dict):
+                # Check exact port match first
+                if str(dest_port_int) in protocol_map:
+                    return protocol_map[str(dest_port_int)]
+                
+                # Check port ranges
+                for port_spec, service_name in protocol_map.items():
+                    if port_in_range(dest_port_int, port_spec):
+                        return service_name
     
     # Default: return protocol as fallback
     return protocol
@@ -831,7 +839,7 @@ if __name__ == "__main__":
     parser.add_argument('-n', '--limit', type=int, default=10, 
                         metavar='N', help='Number of top talkers/conversations to display (default: 10)')
     parser.add_argument('-P', '--prefix', metavar='PREFIX',
-                        help='Filter sessions by IP prefix (CIDR notation, e.g., 10.150.73.0/24)')
+                        help='Filter sessions by IP prefix (CIDR notation, e.g., 10.150.73.0/24) or short-form 10.150.73/24')
     parser.add_argument('-s', '--source', action='store_true',
                         help='With -P, only match source IPs')
     parser.add_argument('-d', '--destination', action='store_true',

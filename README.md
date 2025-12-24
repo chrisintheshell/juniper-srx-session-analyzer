@@ -162,17 +162,19 @@ Client IP                                Server IP                              
 
 ## Service Mapping
 
-The parser uses two service definition files:
+The parser uses three service definition files in priority order:
 
-- **juniper_services.pkl**: Juniper SRX default applications (checked first for priority)
-- **iana_services.pkl**: Complete IANA registry with 11,615 entries (TCP, UDP, SCTP, DCCP services and protocol numbers)
+1. **juniper_services.pkl**: Juniper SRX default applications (highest priority)
+2. **custom_services.pkl**: Site-specific custom applications (240 entries)
+3. **iana_services.pkl**: Complete IANA registry with 11,615 entries (TCP, UDP, SCTP, DCCP services and protocol numbers)
 
 Service lookups follow this priority:
 1. Juniper application name (protocol + port match)
-2. IANA service name (protocol + port match)
-3. Protocol name (fallback)
+2. Custom application name (protocol + port match)
+3. IANA service name (protocol + port match)
+4. Protocol name (fallback)
 
-Port ranges are supported (e.g., `5190-5193` for AOL).
+Port ranges are supported (e.g., `50000-50150` for svc-immix-lv-tcp).
 
 **Note**: Analysis functions (top talkers, conversations, prefix filtering) use ingress flow IPs which represent the original client and server before any NAT translation.
 
@@ -231,6 +233,7 @@ juniper-srx-session-analyzer/
 ├── srx_session_analyzer.py
 └── services/
     ├── juniper_services.pkl
+    ├── custom_services.pkl
     └── iana_services.pkl
 ```
 
