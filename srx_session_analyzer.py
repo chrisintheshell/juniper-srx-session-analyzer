@@ -147,20 +147,51 @@ def is_valid_ip_address(ip):
     
     return False
 
+def expand_short_cidr(prefix_str):
+    """
+    Expand short-form CIDR notation to full notation.
+    
+    Supports abbreviated forms like:
+    - 192.168.1/24 → 192.168.1.0/24
+    - 192.168/16 → 192.168.0.0/16
+    - 10/8 → 10.0.0.0/8
+    
+    Args:
+        prefix_str: CIDR prefix in short or full notation
+    
+    Returns:
+        Full CIDR notation string
+    """
+    if '/' not in prefix_str:
+        return prefix_str
+    
+    network_part, prefix_len = prefix_str.rsplit('/', 1)
+    
+    # Count existing octets
+    octets = network_part.split('.')
+    
+    # Pad with zeros to make 4 octets
+    while len(octets) < 4:
+        octets.append('0')
+    
+    return '.'.join(octets) + '/' + prefix_len
+
+
 def ip_in_prefix(ip_str, prefix_str):
     """
     Check if an IP address falls within a given prefix/network.
     
     Args:
         ip_str: IP address string (e.g., '10.150.73.5')
-        prefix_str: Network prefix in CIDR notation (e.g., '10.150.73.0/24')
+        prefix_str: Network prefix in CIDR notation (e.g., '10.150.73.0/24' or '10.150.73/24')
     
     Returns:
         True if the IP is within the prefix, False otherwise
     """
     try:
         ip = ipaddress.ip_address(ip_str)
-        network = ipaddress.ip_network(prefix_str, strict=False)
+        expanded_prefix = expand_short_cidr(prefix_str)
+        network = ipaddress.ip_network(expanded_prefix, strict=False)
         return ip in network
     except ValueError:
         return False

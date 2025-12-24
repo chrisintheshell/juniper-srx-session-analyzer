@@ -21,7 +21,7 @@ Analyze a Juniper SRX session table dump with optional bandwidth analysis.
 - `-T, --top-talkers` - Display top talkers by bandwidth
 - `-C, --conversations` - Display top conversations (client to server)
 - `-n, --limit N` - Number of top talkers/conversations to display (default: 10, use with `-T` or `-C`)
-- `-P, --prefix PREFIX` - Filter sessions by IP prefix in CIDR notation (e.g., `10.150.73.0/24`)
+- `-P, --prefix PREFIX` - Filter sessions by IP prefix in CIDR notation (e.g., `10.150.73.0/24` or short form `10.150.73/24`)
 - `-s, --source` - With `-P`, only match client (source) IPs (requires `-P`)
 - `-d, --destination` - With `-P`, only match server (destination) IPs (requires `-P`)
 

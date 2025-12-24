@@ -7,7 +7,7 @@ Analyze Juniper SRX session table dumps with optional top talkers and conversati
 - **Session Parsing**: Converts raw SRX session table output to structured CSV format
 - **Extensive Format Support**: Parse detailed output from `show security flow session extensive`
 - **IPv4 & IPv6 Support**: Handles both IPv4 and compressed IPv6 address formats
-- **IP Prefix Filtering**: Filter sessions by source/destination IP prefix (CIDR notation)
+- **IP Prefix Filtering**: Filter sessions by client/server IP prefix (CIDR notation, supports short form like `10.150.73/24`)
 - **Service Name Mapping**: Automatically maps protocol + port to IANA standard and Juniper application names
 - **Top Talkers Analysis**: Identify top bandwidth consumers by client and server IP
 - **Conversation Analysis**: Display top communication flows (client to server pairs with port and service)
@@ -107,7 +107,7 @@ optional arguments:
   -T, --top-talkers             Display top talkers by bandwidth
   -C, --conversations           Display top conversations (client → server)
   -n, --limit N                 Number of top items to display (default: 10)
-  -P, --prefix PREFIX           Filter by IP prefix (CIDR notation)
+  -P, --prefix PREFIX           Filter by IP prefix (CIDR notation or short form)
   -s, --source                  With -P, only match client (source) IPs
   -d, --destination             With -P, only match server (destination) IPs
   -h, --help                    Show help message
