@@ -164,7 +164,7 @@ python srx_session_analyzer.py vpn-sessions.txt -P 10.150.0.0/16 -T -n 10
   - Matches client IP with `-s`, server IP with `-d`, or either by default
 
 - `get_service_name(protocol, dest_port)` - Protocol/port to service name lookup
-  - Checks services in priority order: Juniper → Custom → IANA → protocol name
+  - Checks services in priority order: Custom → Juniper → IANA → protocol name
   - Supports TCP, UDP, SCTP, DCCP and protocol-only services (ospf, icmp, etc.)
   - Supports port ranges (e.g., 50000-50150)
   - Falls back to protocol name if no mapping found
