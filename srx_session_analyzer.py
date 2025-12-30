@@ -18,8 +18,8 @@ def load_services():
     Load service definitions from PKL files using pkl eval.
     
     Loads services in priority order:
-    1. Custom services (site-specific applications)
-    2. Juniper services (vendor defaults)
+    1. Juniper services (vendor defaults)
+    2. Custom services (site-specific applications)
     3. IANA services (standard port mappings)
     
     Falls back to empty dicts if files not found or pkl not available.
@@ -89,8 +89,8 @@ def get_service_name(protocol, dest_port):
     Determine service name from protocol and destination port.
     
     Checks services in priority order:
-    1. Custom services (site-specific applications)
-    2. Juniper services (vendor defaults)
+    1. Juniper services (vendor defaults)
+    2. Custom services (site-specific applications)
     3. IANA services (standard port mappings)
     4. Protocol name (fallback)
     
@@ -111,8 +111,8 @@ def get_service_name(protocol, dest_port):
     
     protocol_lower = protocol.lower()
     
-    # Check services in priority order: Custom -> Juniper -> IANA
-    for service_dict in [custom_services, juniper_services, iana_services]:
+    # Check services in priority order: Juniper -> Custom -> IANA
+    for service_dict in [juniper_services, custom_services, iana_services]:
         if protocol_lower in service_dict:
             protocol_map = service_dict[protocol_lower]
             if isinstance(protocol_map, dict):

@@ -30,9 +30,44 @@ IANA_SERVICES_URL = "https://www.iana.org/assignments/service-names-port-numbers
 IANA_PROTOCOLS_URL = "https://www.iana.org/assignments/protocol-numbers/protocol-numbers-1.csv"
 
 
+MAX_PORT_RANGE_SIZE = 20  # Maximum port range span to include in PKL files
+
+
 def escape_pkl_string(s):
     """Escape special characters for PKL string literals."""
     return s.replace('\\', '\\\\').replace('"', '\\"')
+
+
+def get_port_range_size(port_spec):
+    """
+    Calculate the size of a port specification.
+    
+    Args:
+        port_spec: Port specification string (e.g., "443" or "5190-5193")
+    
+    Returns:
+        Number of ports in the range (1 for single port)
+    """
+    if '-' in port_spec:
+        try:
+            start, end = port_spec.split('-')
+            return int(end) - int(start) + 1
+        except (ValueError, IndexError):
+            return 1
+    return 1
+
+
+def is_port_range_allowed(port_spec):
+    """
+    Check if a port specification is within the allowed range size.
+    
+    Args:
+        port_spec: Port specification string (e.g., "443" or "5190-5193")
+    
+    Returns:
+        True if port range size is <= MAX_PORT_RANGE_SIZE
+    """
+    return get_port_range_size(port_spec) <= MAX_PORT_RANGE_SIZE
 
 
 def validate_pkl(pkl_file):
@@ -100,15 +135,19 @@ def parse_junos_applications(input_file, app_prefix=''):
     - Simple: protocol tcp; destination-port 22;
     - Term-based: term X protocol tcp destination-port 80;
     
+    Port ranges larger than MAX_PORT_RANGE_SIZE are excluded to avoid
+    false matches with overly broad service definitions.
+    
     Args:
         input_file: Path to Junos config file
         app_prefix: Expected prefix for application names (e.g., 'junos-' or 'svc-')
     
     Returns:
-        Tuple of (tcp_services, udp_services) dicts
+        Tuple of (tcp_services, udp_services, skipped_count) - dicts and count of skipped ranges
     """
     tcp_services = {}
     udp_services = {}
+    skipped_ranges = []
     
     with open(input_file, 'r') as f:
         content = f.read()
@@ -133,6 +172,10 @@ def parse_junos_applications(input_file, app_prefix=''):
         
         if term_matches:
             for proto, port in term_matches:
+                # Skip broad port ranges
+                if not is_port_range_allowed(port):
+                    skipped_ranges.append((app_name, proto, port, get_port_range_size(port)))
+                    continue
                 if proto == 'tcp':
                     if port not in tcp_services:
                         tcp_services[port] = app_name
@@ -142,6 +185,10 @@ def parse_junos_applications(input_file, app_prefix=''):
         elif simple_proto_match and simple_port_match:
             proto = simple_proto_match.group(1)
             port = simple_port_match.group(1)
+            # Skip broad port ranges
+            if not is_port_range_allowed(port):
+                skipped_ranges.append((app_name, proto, port, get_port_range_size(port)))
+                continue
             if proto == 'tcp':
                 if port not in tcp_services:
                     tcp_services[port] = app_name
@@ -149,16 +196,20 @@ def parse_junos_applications(input_file, app_prefix=''):
                 if port not in udp_services:
                     udp_services[port] = app_name
     
-    return tcp_services, udp_services
+    return tcp_services, udp_services, skipped_ranges
 
 
 def generate_juniper_services(input_file, output_file):
     """Generate juniper_services.pkl from Junos defaults configuration."""
     print(f"Parsing Juniper defaults from {input_file}...")
     
-    tcp_services, udp_services = parse_junos_applications(input_file)
+    tcp_services, udp_services, skipped_ranges = parse_junos_applications(input_file)
     
     print(f"Found {len(tcp_services)} TCP and {len(udp_services)} UDP services")
+    if skipped_ranges:
+        print(f"Skipped {len(skipped_ranges)} broad port ranges (>{MAX_PORT_RANGE_SIZE} ports):")
+        for app_name, proto, port, size in skipped_ranges:
+            print(f"  - {app_name}: {proto}/{port} ({size} ports)")
     
     header_comments = [
         "Juniper SRX Default Applications",
@@ -190,9 +241,13 @@ def generate_custom_services(input_file, output_file):
     """Generate custom_services.pkl from site applications configuration."""
     print(f"Parsing custom applications from {input_file}...")
     
-    tcp_services, udp_services = parse_junos_applications(input_file)
+    tcp_services, udp_services, skipped_ranges = parse_junos_applications(input_file)
     
     print(f"Found {len(tcp_services)} TCP and {len(udp_services)} UDP services")
+    if skipped_ranges:
+        print(f"Skipped {len(skipped_ranges)} broad port ranges (>{MAX_PORT_RANGE_SIZE} ports):")
+        for app_name, proto, port, size in skipped_ranges:
+            print(f"  - {app_name}: {proto}/{port} ({size} ports)")
     
     header_comments = [
         "Custom Services - Site-Specific Applications",
@@ -272,6 +327,10 @@ def generate_iana_services(output_file, force_download=False):
             
             # Skip reserved/unassigned
             if service_name.lower() in ('reserved', 'unassigned'):
+                continue
+            
+            # Skip broad port ranges
+            if not is_port_range_allowed(port):
                 continue
             
             if protocol == 'tcp':
