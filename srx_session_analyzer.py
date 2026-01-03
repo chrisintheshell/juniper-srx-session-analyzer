@@ -128,6 +128,32 @@ def get_service_name(protocol, dest_port):
     # Default: return protocol as fallback
     return protocol
 
+def detect_format(lines):
+    """
+    Auto-detect session output format (standard vs extensive).
+    
+    Examines the first 100 lines to determine which format the output is in:
+    - Standard format: 'show security flow session'
+    - Extensive format: 'show security flow session extensive'
+    
+    Args:
+        lines: List of lines from the input file
+    
+    Returns:
+        'extensive' if output is from 'show security flow session extensive'
+        'standard' if output is from 'show security flow session'
+    """
+    for line in lines[:100]:
+        line = line.strip()
+        # Extensive format has "Session ID: X, Status: Y, State: Z"
+        if re.match(r'Session ID: \d+,\s+Status:', line):
+            return 'extensive'
+        # Standard format has "Session ID: X, Policy name: Y/Z, ..."
+        if re.match(r'Session ID: \d+,\s+Policy name:', line):
+            return 'standard'
+    return 'standard'  # Default fallback
+
+
 def is_valid_ip_address(ip):
     """
     Validate IPv4 or IPv6 address format.
@@ -318,6 +344,13 @@ def analyze_srx_sessions(input_file, output_file, write_csv=True):
             }
             continue
         
+        # Match CP Session ID line (chassis cluster/MNHA)
+        # Example: CP Session ID: 0x12345678
+        cp_session_match = re.match(r'CP Session ID:\s*(\S+)', line)
+        if cp_session_match and current_session:
+            current_session['cp_session_id'] = cp_session_match.group(1)
+            continue
+        
         # Match Resource information line (optional)
         resource_match = re.match(r'Resource information : (.+)', line)
         if resource_match and current_session:
@@ -351,10 +384,13 @@ def analyze_srx_sessions(input_file, output_file, write_csv=True):
                 if_match = re.search(r'If: ([\w.]+)', line)
                 pkts_match = re.search(r'Pkts: (\d+)', line)
                 bytes_match = re.search(r'Bytes: (\d+)', line)
+                conn_tag_match = re.search(r'Conn Tag:\s*(\S+)', line)
                 
                 current_session['in_interface'] = if_match.group(1) if if_match else ''
                 current_session['in_pkts'] = pkts_match.group(1) if pkts_match else ''
                 current_session['in_bytes'] = bytes_match.group(1) if bytes_match else ''
+                if conn_tag_match:
+                    current_session['in_conn_tag'] = conn_tag_match.group(1)
             continue
         
         # Match Out (egress) line
@@ -377,10 +413,13 @@ def analyze_srx_sessions(input_file, output_file, write_csv=True):
                 if_match = re.search(r'If: ([\w.]+)', line)
                 pkts_match = re.search(r'Pkts: (\d+)', line)
                 bytes_match = re.search(r'Bytes: (\d+)', line)
+                conn_tag_match = re.search(r'Conn Tag:\s*(\S+)', line)
                 
                 current_session['out_interface'] = if_match.group(1) if if_match else ''
                 current_session['out_pkts'] = pkts_match.group(1) if pkts_match else ''
                 current_session['out_bytes'] = bytes_match.group(1) if bytes_match else ''
+                if conn_tag_match:
+                    current_session['out_conn_tag'] = conn_tag_match.group(1)
             continue
     
     # Don't forget the last session
@@ -391,11 +430,11 @@ def analyze_srx_sessions(input_file, output_file, write_csv=True):
     if write_csv and sessions:
         fieldnames = [
             'session_id', 'policy_name', 'policy_id', 'state', 'timeout',
-            'protocol', 'service_name',
+            'cp_session_id', 'protocol', 'service_name',
             'in_src_ip', 'in_src_port', 'in_dst_ip', 'in_dst_port',
-            'in_interface', 'in_pkts', 'in_bytes',
+            'in_conn_tag', 'in_interface', 'in_pkts', 'in_bytes',
             'out_src_ip', 'out_src_port', 'out_dst_ip', 'out_dst_port',
-            'out_interface', 'out_pkts', 'out_bytes', 'resource_info'
+            'out_conn_tag', 'out_interface', 'out_pkts', 'out_bytes', 'resource_info'
         ]
         
         with open(output_file, 'w', newline='') as csvfile:
@@ -433,7 +472,7 @@ def write_sessions_csv(sessions, output_file, extensive=False):
     
     if extensive:
         fieldnames = [
-            'session_id', 'status', 'state', 'flags',
+            'session_id', 'status', 'state', 'flags', 'cp_session_id',
             'policy_name', 'policy_id', 'source_nat_pool', 'application',
             'dynamic_application', 'encryption', 'url_category',
             'atc_rule_set', 'atc_rule',
@@ -452,11 +491,11 @@ def write_sessions_csv(sessions, output_file, extensive=False):
     else:
         fieldnames = [
             'session_id', 'policy_name', 'policy_id', 'state', 'timeout',
-            'protocol', 'service_name',
+            'cp_session_id', 'protocol', 'service_name',
             'in_src_ip', 'in_src_port', 'in_dst_ip', 'in_dst_port',
-            'in_interface', 'in_pkts', 'in_bytes',
+            'in_conn_tag', 'in_interface', 'in_pkts', 'in_bytes',
             'out_src_ip', 'out_src_port', 'out_dst_ip', 'out_dst_port',
-            'out_interface', 'out_pkts', 'out_bytes', 'resource_info'
+            'out_conn_tag', 'out_interface', 'out_pkts', 'out_bytes', 'resource_info'
         ]
     
     with open(output_file, 'w', newline='') as csvfile:
@@ -631,6 +670,13 @@ def analyze_srx_sessions_extensive(input_file, output_file, write_csv=True):
             current_session['flags'] = flags_match.group(1)
             continue
         
+        # Match CP Session ID line (chassis cluster/MNHA)
+        # Example: CP Session ID: 0x12345678
+        cp_session_match = re.match(r'CP Session ID:\s*(\S+)', line)
+        if cp_session_match and current_session:
+            current_session['cp_session_id'] = cp_session_match.group(1)
+            continue
+        
         # Match Policy name line
         policy_match = re.match(r'Policy name: (.+?)/(\d+)', line)
         if policy_match and current_session:
@@ -785,7 +831,7 @@ def analyze_srx_sessions_extensive(input_file, output_file, write_csv=True):
     # Write to CSV if requested
     if write_csv and sessions:
         fieldnames = [
-            'session_id', 'status', 'state', 'flags',
+            'session_id', 'status', 'state', 'flags', 'cp_session_id',
             'policy_name', 'policy_id', 'source_nat_pool', 'application',
             'dynamic_application', 'encryption', 'url_category',
             'atc_rule_set', 'atc_rule',
@@ -831,7 +877,7 @@ if __name__ == "__main__":
     parser.add_argument('input_file', help='SRX session output file')
     parser.add_argument('output_file', nargs='?', help='Output CSV file (optional)')
     parser.add_argument('-E', '--extensive', action='store_true',
-                        help='Parse extensive format output (show security flow session extensive)')
+                        help='Force extensive format parsing (auto-detected if not specified)')
     parser.add_argument('-T', '--top-talkers', action='store_true', 
                         help='Display top talkers by bandwidth')
     parser.add_argument('-C', '--conversations', action='store_true', 
@@ -872,11 +918,23 @@ if __name__ == "__main__":
         print(f"Output file: {output_file}")
         print("-" * 50)
     
-    # Parse sessions (without writing CSV - we'll write after filtering)
+    # Read input file for format detection
+    with open(args.input_file, 'r') as f:
+        lines = f.readlines()
+    
+    # Auto-detect format or use override
     if args.extensive:
+        fmt = 'extensive'
+    else:
+        fmt = detect_format(lines)
+    
+    # Parse sessions (without writing CSV - we'll write after filtering)
+    if fmt == 'extensive':
         sessions = analyze_srx_sessions_extensive(args.input_file, None, write_csv=False)
     else:
         sessions = analyze_srx_sessions(args.input_file, None, write_csv=False)
+    
+    print(f"Detected format: {fmt}")
     
     # Apply prefix filter if specified
     if args.prefix:
@@ -893,7 +951,7 @@ if __name__ == "__main__":
     
     # Write CSV after filtering
     if write_csv:
-        write_sessions_csv(sessions, output_file, extensive=args.extensive)
+        write_sessions_csv(sessions, output_file, extensive=(fmt == 'extensive'))
     
     # Display top talkers if requested
     if args.top_talkers:

@@ -4,6 +4,7 @@ Analyze Juniper SRX session table dumps with optional top talkers and conversati
 
 ## Features
 
+- **Auto-Detection**: Automatically detects standard vs extensive session output format
 - **Session Parsing**: Converts raw SRX session table output to structured CSV format
 - **Extensive Format Support**: Parse detailed output from `show security flow session extensive`
 - **IPv4 & IPv6 Support**: Handles both IPv4 and compressed IPv6 address formats
@@ -72,11 +73,14 @@ python srx_session_analyzer.py vpn-sessions.txt output.csv -T -C -n 15
 ### Extensive Format Parsing
 
 ```bash
-# Parse extensive format output from SRX
+# Parse extensive format output (auto-detected)
+python srx_session_analyzer.py sessions-extensive.txt
+
+# Force extensive format parsing (override auto-detection)
 python srx_session_analyzer.py sessions-extensive.txt -E
 
 # Extensive format with top talkers
-python srx_session_analyzer.py sessions-extensive.txt -E -T -n 15
+python srx_session_analyzer.py sessions-extensive.txt -T -n 15
 ```
 
 ### IP Prefix Filtering
@@ -103,7 +107,7 @@ positional arguments:
   output_file                   Output CSV file (optional)
 
 optional arguments:
-  -E, --extensive               Parse extensive format output
+  -E, --extensive               Force extensive format parsing (auto-detected if not specified)
   -T, --top-talkers             Display top talkers by bandwidth
   -C, --conversations           Display top conversations (client → server)
   -n, --limit N                 Number of top items to display (default: 10)
@@ -115,19 +119,39 @@ optional arguments:
 
 ## Output
 
-### CSV Format
+### CSV Format (Standard)
 
 The CSV output contains the following fields:
 
-**Session Metadata**: `session_id`, `policy_name`, `policy_id`, `state`, `timeout`
+**Session Metadata**: `session_id`, `policy_name`, `policy_id`, `state`, `timeout`, `cp_session_id`
 
 **Protocol Info**: `protocol`, `service_name`
 
-**Ingress Flow**: `in_src_ip`, `in_src_port`, `in_dst_ip`, `in_dst_port`, `in_interface`, `in_pkts`, `in_bytes`
+**Ingress Flow**: `in_src_ip`, `in_src_port`, `in_dst_ip`, `in_dst_port`, `in_conn_tag`, `in_interface`, `in_pkts`, `in_bytes`
 
-**Egress Flow**: `out_src_ip`, `out_src_port`, `out_dst_ip`, `out_dst_port`, `out_interface`, `out_pkts`, `out_bytes`
+**Egress Flow**: `out_src_ip`, `out_src_port`, `out_dst_ip`, `out_dst_port`, `out_conn_tag`, `out_interface`, `out_pkts`, `out_bytes`
 
 **Other**: `resource_info`
+
+### CSV Format (Extensive)
+
+When parsing extensive format output, additional fields are included:
+
+**Session Metadata**: `session_id`, `status`, `state`, `flags`, `cp_session_id`, `policy_name`, `policy_id`
+
+**NAT/App Info**: `source_nat_pool`, `application`, `dynamic_application`, `encryption`, `url_category`
+
+**Traffic Control**: `atc_rule_set`, `atc_rule`
+
+**Timing**: `max_timeout`, `current_timeout`, `session_state`, `start_time`, `duration`
+
+**Client Info**: `client_info`
+
+**Protocol Info**: `protocol`, `service_name`
+
+**Ingress Flow**: `in_src_ip`, `in_src_port`, `in_dst_ip`, `in_dst_port`, `in_conn_tag`, `in_interface`, `in_session_token`, `in_flag`, `in_route`, `in_gateway`, `in_tunnel_id`, `in_tunnel_type`, `in_port_seq`, `in_fin_seq`, `in_fin_state`, `in_pkts`, `in_bytes`
+
+**Egress Flow**: `out_src_ip`, `out_src_port`, `out_dst_ip`, `out_dst_port`, `out_conn_tag`, `out_interface`, `out_session_token`, `out_flag`, `out_route`, `out_gateway`, `out_tunnel_id`, `out_tunnel_type`, `out_port_seq`, `out_fin_seq`, `out_fin_state`, `out_pkts`, `out_bytes`
 
 ### Top Talkers Output
 

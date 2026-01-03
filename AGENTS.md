@@ -44,7 +44,7 @@ Analyze a Juniper SRX session table dump with optional bandwidth analysis.
 - `output_file` - Path to the output CSV file (optional, auto-generated if not provided)
 
 **Options:**
-- `-E, --extensive` - Parse extensive format output (`show security flow session extensive`)
+- `-E, --extensive` - Force extensive format parsing (format is auto-detected if not specified)
 - `-T, --top-talkers` - Display top talkers by bandwidth
 - `-C, --conversations` - Display top conversations (client to server)
 - `-n, --limit N` - Number of top talkers/conversations to display (default: 10, use with `-T` or `-C`)
@@ -59,14 +59,14 @@ Analyze a Juniper SRX session table dump with optional bandwidth analysis.
 - **With `-T` and/or `-C` and explicit output file**: Displays analysis AND writes CSV
 
 **CSV Output Fields (Standard Format):**
-- Session metadata: `session_id`, `policy_name`, `policy_id`, `state`, `timeout`
+- Session metadata: `session_id`, `policy_name`, `policy_id`, `state`, `timeout`, `cp_session_id`
 - Protocol info: `protocol`, `service_name` (IANA standard service names, e.g., https, ssh, dns)
-- Ingress: `in_src_ip`, `in_src_port`, `in_dst_ip`, `in_dst_port`, `in_interface`, `in_pkts`, `in_bytes`
-- Egress: `out_src_ip`, `out_src_port`, `out_dst_ip`, `out_dst_port`, `out_interface`, `out_pkts`, `out_bytes`
+- Ingress: `in_src_ip`, `in_src_port`, `in_dst_ip`, `in_dst_port`, `in_conn_tag`, `in_interface`, `in_pkts`, `in_bytes`
+- Egress: `out_src_ip`, `out_src_port`, `out_dst_ip`, `out_dst_port`, `out_conn_tag`, `out_interface`, `out_pkts`, `out_bytes`
 - Other: `resource_info`
 
-**CSV Output Fields (Extensive Format with `-E`):**
-- Session metadata: `session_id`, `status`, `state`, `flags`, `policy_name`, `policy_id`
+**CSV Output Fields (Extensive Format):**
+- Session metadata: `session_id`, `status`, `state`, `flags`, `cp_session_id`, `policy_name`, `policy_id`
 - NAT/App info: `source_nat_pool`, `application`, `dynamic_application`, `encryption`, `url_category`
 - Traffic control: `atc_rule_set`, `atc_rule`
 - Timing: `max_timeout`, `current_timeout`, `session_state`, `start_time`, `duration`
@@ -102,12 +102,15 @@ python srx_session_analyzer.py vpn-sessions.txt output.csv -T -n 15
 # Show talkers and conversations AND write CSV
 python srx_session_analyzer.py vpn-sessions.txt output.csv -T -C -n 20
 
-# Parse extensive format output
+# Parse extensive format output (auto-detected, -E optional)
+python srx_session_analyzer.py sessions-extensive.txt
+python srx_session_analyzer.py sessions-extensive.txt output.csv
+
+# Force extensive format parsing (override auto-detection)
 python srx_session_analyzer.py sessions-extensive.txt -E
-python srx_session_analyzer.py sessions-extensive.txt output.csv -E
 
 # Parse extensive format with top talkers
-python srx_session_analyzer.py sessions-extensive.txt -E -T -n 15
+python srx_session_analyzer.py sessions-extensive.txt -T -n 15
 
 # Filter by IP prefix (matches client OR server IP)
 python srx_session_analyzer.py vpn-sessions.txt -P 10.150.73.0/24
@@ -123,6 +126,11 @@ python srx_session_analyzer.py vpn-sessions.txt -P 10.150.0.0/16 -T -n 10
 ```
 
 ## Code Structure
+
+- `detect_format(lines)` - Auto-detect session output format
+  - Examines first 100 lines to determine format
+  - Returns 'extensive' for `show security flow session extensive` output
+  - Returns 'standard' for `show security flow session` output
 
 - `analyze_srx_sessions(input_file, output_file, write_csv=True)` - Main analysis function
   - Parses output from `show security flow session`
@@ -182,6 +190,7 @@ Parser expects SRX session table output with the following structure:
 
 ## Features
 
+- **Auto-Detection**: Automatically detects standard vs extensive format output
 - **IPv4 and IPv6 Support**: Handles both IPv4 and compressed IPv6 address formats
 - **IANA Service Name Mapping**: Automatically maps protocol + destination port to IANA standard service names (e.g., tcp/443 → https)
 - **IP Validation**: Validates IP addresses before including in output
