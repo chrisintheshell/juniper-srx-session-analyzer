@@ -648,8 +648,9 @@ def analyze_srx_sessions_extensive(input_file, output_file, write_csv=True):
             continue
         
         # Match Session ID line (extensive format)
-        # Session ID: 4294967448, Status: Normal, State: Active
-        session_match = re.match(r'Session ID: (\d+),\s+Status: (\w+),\s+State: (\w+)', line)
+        # Format 1: Session ID: 4294967448, Status: Normal, State: Active
+        # Format 2: Session ID: 967, Status: Normal (State on separate line)
+        session_match = re.match(r'Session ID: (\d+),\s+Status: (\w+)(?:,\s+State: (\w+))?', line)
         if session_match:
             # Save previous session if it exists
             if current_session:
@@ -658,7 +659,7 @@ def analyze_srx_sessions_extensive(input_file, output_file, write_csv=True):
             current_session = {
                 'session_id': session_match.group(1),
                 'status': session_match.group(2),
-                'state': session_match.group(3),
+                'state': session_match.group(3) if session_match.group(3) else '',
                 'service_name': ''
             }
             current_flow = None
